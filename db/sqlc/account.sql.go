@@ -10,7 +10,7 @@ import (
 )
 
 const deleteAccounts = `-- name: DeleteAccounts :exec
-DELETE FROM account
+DELETE FROM accounts
 WHERE id = $1
 `
 
@@ -20,7 +20,7 @@ func (q *Queries) DeleteAccounts(ctx context.Context, id int64) error {
 }
 
 const getAccounts = `-- name: GetAccounts :one
-SELECT id, owner, balance, currency, created_at FROM account
+SELECT id, owner, balance, currency, created_at FROM accounts
 WHERE id = $1 LIMIT 1
 `
 
@@ -38,7 +38,7 @@ func (q *Queries) GetAccounts(ctx context.Context, id int64) (Account, error) {
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, owner, balance, currency, created_at FROM account
+SELECT id, owner, balance, currency, created_at FROM accounts
 ORDER BY name
 `
 
@@ -72,14 +72,14 @@ func (q *Queries) ListAccounts(ctx context.Context) ([]Account, error) {
 }
 
 const updateAuthor = `-- name: UpdateAuthor :exec
-UPDATE account
+UPDATE accounts
   set balance = $2
 WHERE id = $1
 `
 
 type UpdateAuthorParams struct {
-	ID      int64  `json:"id"`
-	Balance string `json:"balance"`
+	ID      int64 `json:"id"`
+	Balance int64 `json:"balance"`
 }
 
 func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) error {
@@ -87,22 +87,22 @@ func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) erro
 	return err
 }
 
-const account = `-- name: account :one
-INSERT INTO account (
+const accounts = `-- name: accounts :one
+INSERT INTO accounts (
   owner, balance , currency
 ) VALUES (
   $1, $2 , $3
 )RETURNING id, owner, balance, currency, created_at
 `
 
-type accountParams struct {
+type accountsParams struct {
 	Owner    string `json:"owner"`
-	Balance  string `json:"balance"`
+	Balance  int64  `json:"balance"`
 	Currency string `json:"currency"`
 }
 
-func (q *Queries) account(ctx context.Context, arg accountParams) (Account, error) {
-	row := q.db.QueryRowContext(ctx, account, arg.Owner, arg.Balance, arg.Currency)
+func (q *Queries) accounts(ctx context.Context, arg accountsParams) (Account, error) {
+	row := q.db.QueryRowContext(ctx, accounts, arg.Owner, arg.Balance, arg.Currency)
 	var i Account
 	err := row.Scan(
 		&i.ID,
