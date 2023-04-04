@@ -9,23 +9,50 @@ import (
 	"context"
 )
 
-const deleteTransfers = `-- name: DeleteTransfers :exec
+const createTransfer = `-- name: CreateTransfer :one
+INSERT INTO transfers (
+  from_account_id,to_account_id, amount
+) VALUES (
+  $1, $2 , $3
+)RETURNING id, from_account_id, to_account_id, amount, created_at
+`
+
+type CreateTransferParams struct {
+	FromAccountID int64 `json:"from_account_id"`
+	ToAccountID   int64 `json:"to_account_id"`
+	Amount        int64 `json:"amount"`
+}
+
+func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
+	row := q.db.QueryRowContext(ctx, createTransfer, arg.FromAccountID, arg.ToAccountID, arg.Amount)
+	var i Transfer
+	err := row.Scan(
+		&i.ID,
+		&i.FromAccountID,
+		&i.ToAccountID,
+		&i.Amount,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const deleteTransfer = `-- name: DeleteTransfer :exec
 DELETE FROM transfers
 WHERE id = $1
 `
 
-func (q *Queries) DeleteTransfers(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTransfers, id)
+func (q *Queries) DeleteTransfer(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteTransfer, id)
 	return err
 }
 
-const getTransfers = `-- name: GetTransfers :one
+const getTransfer = `-- name: GetTransfer :one
 SELECT id, from_account_id, to_account_id, amount, created_at FROM transfers
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetTransfers(ctx context.Context, id int64) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, getTransfers, id)
+func (q *Queries) GetTransfer(ctx context.Context, id int64) (Transfer, error) {
+	row := q.db.QueryRowContext(ctx, getTransfer, id)
 	var i Transfer
 	err := row.Scan(
 		&i.ID,
@@ -68,31 +95,4 @@ func (q *Queries) ListTransfers(ctx context.Context) ([]Transfer, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const transfers = `-- name: Transfers :one
-INSERT INTO transfers (
-  from_account_id,to_account_id, amount
-) VALUES (
-  $1, $2 , $3
-)RETURNING id, from_account_id, to_account_id, amount, created_at
-`
-
-type TransfersParams struct {
-	FromAccountID int64 `json:"from_account_id"`
-	ToAccountID   int64 `json:"to_account_id"`
-	Amount        int64 `json:"amount"`
-}
-
-func (q *Queries) Transfers(ctx context.Context, arg TransfersParams) (Transfer, error) {
-	row := q.db.QueryRowContext(ctx, transfers, arg.FromAccountID, arg.ToAccountID, arg.Amount)
-	var i Transfer
-	err := row.Scan(
-		&i.ID,
-		&i.FromAccountID,
-		&i.ToAccountID,
-		&i.Amount,
-		&i.CreatedAt,
-	)
-	return i, err
 }

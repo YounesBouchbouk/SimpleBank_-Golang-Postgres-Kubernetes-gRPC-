@@ -9,13 +9,13 @@ import (
 )
 
 func createAccountfunction(t *testing.T) Account {
-	arg := accountsParams{
+	arg := CreateAccountParams{
 		Owner:    utils.RandomOwner(),
 		Balance:  utils.RandomMoney(),
 		Currency: utils.RandomCurrency(),
 	}
 
-	account, err := testQueries.accounts(context.Background(), arg)
+	account, err := testQueries.CreateAccount(context.Background(), arg)
 
 	require.NoError(t, err)
 
@@ -40,7 +40,7 @@ func TestCreateAccout(t *testing.T) {
 func TestGetAccount(t *testing.T) {
 	createAccount := createAccountfunction(t)
 
-	account, err := testQueries.GetAccounts(context.Background(), createAccount.ID)
+	account, err := testQueries.GetAccount(context.Background(), createAccount.ID)
 
 	require.NoError(t, err)
 
@@ -55,7 +55,7 @@ func TestGetAccount(t *testing.T) {
 func TestDeleteAccout(t *testing.T) {
 	createAccount := createAccountfunction(t)
 
-	err := testQueries.DeleteAccounts(context.Background(), createAccount.ID)
+	err := testQueries.DeleteAccount(context.Background(), createAccount.ID)
 
 	require.NoError(t, err)
 }
@@ -63,12 +63,13 @@ func TestDeleteAccout(t *testing.T) {
 func TestUpdateAccount(t *testing.T) {
 	createAccount := createAccountfunction(t)
 
-	args := UpdateAuthorParams{
+	args := UpdateAccountParams{
 		ID:      createAccount.ID,
 		Balance: 2000,
 	}
-	err := testQueries.UpdateAuthor(context.Background(), args)
+	account, err := testQueries.UpdateAccount(context.Background(), args)
 
 	require.NoError(t, err)
+	require.NotEmpty(t, account)
 
 }

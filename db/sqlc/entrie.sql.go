@@ -9,6 +9,31 @@ import (
 	"context"
 )
 
+const createEntry = `-- name: CreateEntry :one
+INSERT INTO entries (
+  account_id, amount
+) VALUES (
+  $1, $2
+)RETURNING id, account_id, amount, created_at
+`
+
+type CreateEntryParams struct {
+	AccountID int64 `json:"account_id"`
+	Amount    int64 `json:"amount"`
+}
+
+func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
+	row := q.db.QueryRowContext(ctx, createEntry, arg.AccountID, arg.Amount)
+	var i Entry
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Amount,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const deleteEntries = `-- name: DeleteEntries :exec
 DELETE FROM entries
 WHERE id = $1
@@ -19,13 +44,13 @@ func (q *Queries) DeleteEntries(ctx context.Context, id int64) error {
 	return err
 }
 
-const getEntries = `-- name: GetEntries :one
+const getEntry = `-- name: GetEntry :one
 SELECT id, account_id, amount, created_at FROM entries
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetEntries(ctx context.Context, id int64) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, getEntries, id)
+func (q *Queries) GetEntry(ctx context.Context, id int64) (Entry, error) {
+	row := q.db.QueryRowContext(ctx, getEntry, id)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -66,29 +91,4 @@ func (q *Queries) ListEntries(ctx context.Context) ([]Entry, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const entries = `-- name: entries :one
-INSERT INTO entries (
-  account_id, amount
-) VALUES (
-  $1, $2
-)RETURNING id, account_id, amount, created_at
-`
-
-type entriesParams struct {
-	AccountID int64 `json:"account_id"`
-	Amount    int64 `json:"amount"`
-}
-
-func (q *Queries) entries(ctx context.Context, arg entriesParams) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, entries, arg.AccountID, arg.Amount)
-	var i Entry
-	err := row.Scan(
-		&i.ID,
-		&i.AccountID,
-		&i.Amount,
-		&i.CreatedAt,
-	)
-	return i, err
 }
