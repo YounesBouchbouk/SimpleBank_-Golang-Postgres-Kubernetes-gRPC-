@@ -1,0 +1,31 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Ci
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  #job 1 name : test
+  test:
+    runs-on: ubuntu-latest
+
+    #define steps ... 
+    steps:
+    #step1 ...
+    - name: Check out code into the Go module directory
+    - uses: actions/checkout@v3
+
+    #step2 ...
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.20.1
+      id: go
+    #...3
+    - name: Test
+      run: make test
