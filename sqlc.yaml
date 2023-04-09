@@ -6,3 +6,4 @@ packages:
     queries: "./db/query"
     schema: "./db/migration"
     emit_json_tags: true
+    emit_empty_slices : true
