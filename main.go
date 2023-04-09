@@ -6,18 +6,18 @@ import (
 
 	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/api"
 	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
 	_ "github.com/lib/pq"
 )
 
-const (
-	dbDriver   = "postgres"
-	dbSource   = "postgres://younes:secret@localhost:5432/simple_bank?sslmode=disable"
-	APIaddress = "0.0.0.0:8080"
-)
-
 func main() {
-	var err error
-	connection, err := sql.Open(dbDriver, dbSource)
+
+	config, err := utils.LoadConfig("./")
+	if err != nil {
+		log.Fatal("cannot load config:", err)
+	}
+
+	connection, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
@@ -26,7 +26,7 @@ func main() {
 
 	server := api.NewServer(store)
 
-	err = server.Start(APIaddress)
+	err = server.Start(config.ServerAddress)
 
 	if err != nil {
 		log.Fatal("cannot start the server:", err)

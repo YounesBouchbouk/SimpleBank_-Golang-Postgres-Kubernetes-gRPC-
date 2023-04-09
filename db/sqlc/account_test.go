@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/utils"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
 	"github.com/stretchr/testify/require"
 )
 
