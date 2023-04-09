@@ -12,7 +12,7 @@ WHERE id = $1 LIMIT 1;
 
 -- name: ListAccounts :many
 SELECT * FROM accounts
-ORDER BY name;
+ORDER BY owner offset sqlc.arg(offsetnb) limit sqlc.arg(limitnb);
 
 -- name: DeleteAccount :exec
 DELETE FROM accounts
