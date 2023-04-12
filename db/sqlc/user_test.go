@@ -15,9 +15,13 @@ func TestCreateUser(t *testing.T) {
 }
 
 func createUserFunction(t *testing.T) User {
+	hashedPassword, err := utils.HashPassword("younes")
+
+	require.NoError(t, err)
+
 	ars := CreateUserParams{
 		Username:       utils.RandomString(3),
-		HashedPassword: "secret",
+		HashedPassword: hashedPassword,
 		FullName:       utils.RandomString(3),
 		Email:          fmt.Sprintf("%s@gmail.com", utils.RandomString(8)),
 	}

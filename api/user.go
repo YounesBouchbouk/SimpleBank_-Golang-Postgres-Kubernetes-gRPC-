@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,9 +23,16 @@ func (server *Server) CreateUser(ctx *gin.Context) {
 		return
 	}
 
+	hashedPassword, err := utils.HashPassword(req.HashedPassword)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
 	args := db.CreateUserParams{
 		Username:       req.Username,
-		HashedPassword: req.HashedPassword,
+		HashedPassword: hashedPassword,
 		FullName:       req.FullName,
 		Email:          req.Email,
 	}
