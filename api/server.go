@@ -1,19 +1,37 @@
 package api
 
 import (
+	"fmt"
+
 	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/token"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
 )
 
 type Server struct {
-	store  *db.Store
-	router *gin.Engine
+	tokenMake token.Maker
+	store     *db.Store
+	router    *gin.Engine
+	config    utils.Config
 }
 
-func NewServer(store *db.Store) *Server {
-	server := &Server{store: store}
+func NewServer(config utils.Config, store *db.Store) (*Server, error) {
+
+	//use token.NewJWTMaker to work with jwt
+	// tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
+
+	//use token.NewJWTMaker to work with NewPasetoMaker
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+
+	server := &Server{store: store, tokenMake: tokenMaker}
+
 	router := gin.Default()
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -39,7 +57,7 @@ func NewServer(store *db.Store) *Server {
 	router.POST("/login", server.login)
 
 	server.router = router
-	return server
+	return server, nil
 }
 
 // start and runs http server at specific address.
