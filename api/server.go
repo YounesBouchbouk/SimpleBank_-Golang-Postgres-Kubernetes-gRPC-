@@ -11,58 +11,55 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Server serves HTTP requests for our banking service.
 type Server struct {
-	tokenMake token.Maker
-	store     *db.Store
-	router    *gin.Engine
-	config    utils.Config
+	config     utils.Config
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
 }
 
-func NewServer(config utils.Config, store *db.Store) (*Server, error) {
-
-	//use token.NewJWTMaker to work with jwt
-	// tokenMaker, err := token.NewJWTMaker(config.TokenSymmetricKey)
-
-	//use token.NewJWTMaker to work with NewPasetoMaker
+// NewServer creates a new HTTP server and set up routing.
+func NewServer(config utils.Config, store db.Store) (*Server, error) {
 	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
-
 	if err != nil {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
 
-	server := &Server{store: store, tokenMake: tokenMaker}
-
-	router := gin.Default()
+	server := &Server{
+		config:     config,
+		store:      store,
+		tokenMaker: tokenMaker,
+	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("currency", validCurrency)
 	}
 
-	//user routers
-
-	router.POST("/users", server.CreateUser)
-
-	//account routers
-
-	router.POST("/accounts", server.createAccount)
-	router.GET("/account/:id", server.getAccount)
-	router.GET("/accounts", server.getAllAccounts)
-	router.DELETE("/account/:id", server.deleteAccount)
-
-	//transfer routers
-
-	router.POST("/transfert", server.createTransfer)
-
-	//authentification routes
-	router.POST("/login", server.login)
-
-	server.router = router
+	server.setupRouter()
 	return server, nil
 }
 
-// start and runs http server at specific address.
-func (server *Server) Start(adress string) error {
-	return server.router.Run(adress)
+func (server *Server) setupRouter() {
+	router := gin.Default()
+
+	router.POST("/users", server.CreateUser)
+	router.POST("/users/login", server.login)
+
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+
+	authRoutes.POST("/accounts", server.createAccount)
+	authRoutes.GET("/accounts/:id", server.getAccount)
+	authRoutes.GET("/accounts", server.getAllAccounts)
+
+	authRoutes.POST("/transfers", server.createTransfer)
+
+	server.router = router
+}
+
+// Start runs the HTTP server on a specific address.
+func (server *Server) Start(address string) error {
+	return server.router.Run(address)
 }
 
 func errorResponse(err error) gin.H {

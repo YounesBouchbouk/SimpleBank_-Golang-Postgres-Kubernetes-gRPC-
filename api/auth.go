@@ -55,7 +55,7 @@ func (server *Server) login(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := server.tokenMake.CreateToken(
+	accessToken, err := server.tokenMaker.CreateToken(
 		user.Username,
 		server.config.AccessTokenDuration,
 	)

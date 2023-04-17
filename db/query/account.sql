@@ -10,8 +10,13 @@ INSERT INTO accounts (
 SELECT * FROM accounts
 WHERE id = $1 LIMIT 1;
 
+-- name: GetAccountByUserName :one
+SELECT * FROM accounts
+WHERE owner = $1 LIMIT 1;
+
 -- name: ListAccounts :many
 SELECT * FROM accounts
+WHERE owner = sqlc.arg(username)
 ORDER BY owner offset sqlc.arg(offsetnb) limit sqlc.arg(limitnb);
 
 -- name: DeleteAccount :exec

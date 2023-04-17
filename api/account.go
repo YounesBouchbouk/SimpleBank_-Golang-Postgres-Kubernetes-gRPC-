@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/token"
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
 )
@@ -22,8 +23,10 @@ func (server *Server) createAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	args := db.CreateAccountParams{
-		Owner:    req.Owner,
+		Owner:    authPayload.Username,
 		Balance:  0,
 		Currency: req.Currency,
 	}
@@ -58,7 +61,14 @@ func (server *Server) getAccount(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	account, err := server.store.GetAccount(ctx, req.ID)
+
+	if account.Owner != authPayload.Username {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "you don't have permision to acces this account"})
+		return
+	}
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
@@ -82,9 +92,12 @@ func (server *Server) getAllAccounts(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
 	arg := db.ListAccountsParams{
 		Offsetnb: (req.PageID - 1) * req.PageSize,
 		Limitnb:  int32(req.PageSize),
+		Username: authPayload.Username,
 	}
 
 	accounts, err := server.store.ListAccounts(ctx, arg)
@@ -113,6 +126,13 @@ func (server *Server) deleteAccount(ctx *gin.Context) {
 	println(req.ID)
 
 	account, err := server.store.GetAccount(ctx, req.ID)
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	if account.Owner != authPayload.Username {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "you don't have permition to do this"})
+		return
+	}
 
 	if err != nil {
 		if err == sql.ErrNoRows {
