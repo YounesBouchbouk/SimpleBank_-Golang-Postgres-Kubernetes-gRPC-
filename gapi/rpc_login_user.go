@@ -57,8 +57,8 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		ID:           refreshTokenPayload.ID,
 		Username:     user.Username,
 		RefreshToken: refreshToken,
-		UserAgent:    "",
-		ClientIp:     "",
+		UserAgent:    server.extractMetadata(ctx).UserAgent,
+		ClientIp:     server.extractMetadata(ctx).ClientIP,
 		IsBlocked:    false,
 		ExpiresAt:    refreshTokenPayload.ExpiredAt,
 	}
@@ -69,17 +69,6 @@ func (server *Server) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		return nil, status.Errorf(codes.Internal, "can't create session")
 
 	}
-
-	// rsp := db.loginUserResponse{
-	// 	AccessToken:           accessToken,
-	// 	User:                  newUserResponse(user),
-	// 	AccessTokenExpiresAt:  accessTokenPayload.ExpiredAt,
-	// 	RefreshToken:          refreshToken,
-	// 	RefreshTokenExpiresAt: refreshTokenPayload.ExpiredAt,
-	// 	SessionID:             session.ID,
-	// }
-
-	// ctx.JSON(http.StatusOK, rsp)
 
 	res := &pb.LoginUserResponse{
 		User:                  transferFromToUserResp(user),
