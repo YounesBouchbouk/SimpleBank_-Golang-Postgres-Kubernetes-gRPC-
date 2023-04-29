@@ -37,6 +37,7 @@ func main() {
 	// runGinServer(config, store)
 
 	//run gRpc server
+	// go runGinServer(config, store)
 	go runGatewayServer(config, store)
 	rungRpcServer(config, store)
 

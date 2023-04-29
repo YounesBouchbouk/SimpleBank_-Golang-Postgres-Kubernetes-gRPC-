@@ -2,6 +2,8 @@ package gapi
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
 	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/pb"
@@ -12,42 +14,60 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func (server *Server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
+func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
 
-	violations := validateCreateUserRequest(req)
-	if violations != nil {
-		return nil, invalidArgumentError(violations)
+	var ars db.UpdateUserParams
+
+	if req.Email != "" {
+		ars.Email = sql.NullString{
+			String: req.Email,
+			Valid:  true,
+		}
 	}
 
-	hashedPassword, err := utils.HashPassword(req.Password)
+	if req.FullName != "" {
+		ars.FullName = sql.NullString{
+			String: req.FullName,
+			Valid:  true,
+		}
+	}
+
+	if req.Password != "" {
+		hashedPassword, err := utils.HashPassword(req.Password)
+
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "can't hash password")
+
+		}
+		ars.HashedPassword = sql.NullString{
+			String: hashedPassword,
+			Valid:  true,
+		}
+
+		ars.PasswordChangedAt = sql.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		}
+	}
+
+	ars.Username = req.Username
+
+	user, err := server.store.UpdateUser(ctx, ars)
 
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "can't hash password")
-	}
-
-	args := db.CreateUserParams{
-		Username:       req.GetUsername(),
-		HashedPassword: hashedPassword,
-		FullName:       req.GetPassword(),
-		Email:          req.GetEmail(),
-	}
-
-	user, err := server.store.CreateUser(ctx, args)
-
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "can't create user")
+		return nil, status.Errorf(codes.Internal, "can't update user information")
 
 	}
 
-	rsp := &pb.CreateUserResponse{
+	res := &pb.UpdateUserResponse{
 		User: transferFromToUserResp(user),
 	}
 
-	return rsp, nil
+	return res, nil
 
 }
 
-func validateCreateUserRequest(req *pb.CreateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
+func validateUpdateUserRequest(req *pb.UpdateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
 	if err := val.ValidUsername(req.GetUsername()); err != nil {
 		violations = append(violations, fieldViolation("username", err))
 	}
