@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -32,6 +33,30 @@ func createUserFunction(t *testing.T) User {
 	require.NotEmpty(t, user)
 
 	return user
+
+}
+
+func TestUpdateUser(t *testing.T) {
+	user1 := createUserFunction(t)
+	require.NotEmpty(t, user1)
+
+	email := fmt.Sprintf("%s@gmail.com", utils.RandomString(8))
+
+	args := UpdateUserParams{
+		Username: user1.Username,
+		Email: sql.NullString{
+			String: email,
+			Valid:  true,
+		},
+	}
+
+	updatedUser, err := testQueries.UpdateUser(context.Background(), args)
+
+	require.Empty(t, err)
+	require.Nil(t, err)
+
+	require.NotEqual(t, user1.Email, updatedUser.Email)
+	require.Equal(t, updatedUser.Email, email)
 
 }
 
