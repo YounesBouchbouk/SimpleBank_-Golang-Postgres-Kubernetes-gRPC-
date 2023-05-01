@@ -38,9 +38,10 @@ func main() {
 
 	//run gRpc server
 	// go runGinServer(config, store)
-	go runGatewayServer(config, store)
-	rungRpcServer(config, store)
-
+	// go runGatewayServer(config, store)
+	// // rungRpcServer(config, store)
+	runGinServer(config, store)
+	// go rungRpcServer(config, store)
 }
 
 func runGatewayServer(config utils.Config, store db.Store) {
