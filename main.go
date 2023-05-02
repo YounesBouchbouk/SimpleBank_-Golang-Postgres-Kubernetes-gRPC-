@@ -8,16 +8,18 @@ import (
 	"net/http"
 
 	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/api"
+	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
 	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/gapi"
 	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/pb"
+	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
-
-	db "github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/db/sqlc"
-	"github.com/YounesBouchbouk/SimpleBank_-Golang-Postgres-Kubernetes-gRPC-/utils"
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -31,6 +33,8 @@ func main() {
 		log.Fatal("cannot connect to db:", err)
 	}
 
+	runDbMigration(config.MigrationUrl, config.DBSource)
+
 	store := db.NewStore(conn)
 
 	//to run GIN server
@@ -42,6 +46,22 @@ func main() {
 	// // rungRpcServer(config, store)
 	runGinServer(config, store)
 	// go rungRpcServer(config, store)
+}
+
+func runDbMigration(migrationURL string, dbSource string) {
+	m, err := migrate.New(
+		migrationURL,
+		dbSource)
+
+	if err != nil {
+		log.Fatal("can't run db igration :", err)
+	}
+
+	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatalf("can't run db migration : %s", err)
+	}
+
+	log.Println("db migrated successfully")
 }
 
 func runGatewayServer(config utils.Config, store db.Store) {
